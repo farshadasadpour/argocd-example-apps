@@ -1,0 +1,72 @@
+# nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 50
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-config-volume
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  nginx.conf: |
+    server {
+        listen 80;
+
+        location / {
+            default_type text/plain;
+            return 200 "Hello from pod: $HOSTNAME\n";
+        }
+    }
+---
+# nginx-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 80
+    nodePort: 30008
+  type: NodePort
+---
+## nginx-service.yaml
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: nginx-service
+#spec:
+#  selector:
+#    app: nginx
+#  ports:
+#  - protocol: TCP
+#    port: 80
+#    targetPort: 80
+#  type: ClusterIP
+
